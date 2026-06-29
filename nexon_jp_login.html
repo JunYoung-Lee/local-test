@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXON ログイン</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #12121a;
+      --border:    #1e1e2e;
+      --input-bg:  #0f0f18;
+      --nx-orange: #f0651a;
+      --nx-orange-dim: rgba(240, 101, 26, 0.15);
+      --nx-orange-glow: rgba(240, 101, 26, 0.35);
+      --text-primary:   #f0f0f0;
+      --text-secondary: #7a7a90;
+      --text-hint:      #4a4a60;
+      --success: #2dd4bf;
+      --error:   #f87171;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'Noto Sans JP', 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient glow background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(240, 101, 26, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+      position: relative;
+    }
+
+    /* Top accent line */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--nx-orange), transparent);
+      border-radius: 16px 16px 0 0;
+    }
+
+    /* Logo */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--nx-orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.5px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--text-primary);
+    }
+
+    .logo-region {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      margin-left: 2px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      letter-spacing: 0.3px;
+    }
+
+    /* Form */
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input::placeholder {
+      color: var(--text-hint);
+    }
+
+    input:focus {
+      border-color: var(--nx-orange);
+      box-shadow: 0 0 0 3px var(--nx-orange-dim);
+    }
+
+    input.error {
+      border-color: var(--error);
+    }
+
+    .field-error {
+      font-size: 11px;
+      color: var(--error);
+      margin-top: 6px;
+      display: none;
+    }
+
+    .field-error.show {
+      display: block;
+    }
+
+    /* Options row */
+    .options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      margin-top: 4px;
+    }
+
+    .remember-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    .remember-label input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      padding: 0;
+      border-radius: 3px;
+      cursor: pointer;
+      accent-color: var(--nx-orange);
+    }
+
+    .forgot-link {
+      font-size: 12px;
+      color: var(--nx-orange);
+      text-decoration: none;
+      opacity: 0.8;
+      transition: opacity 0.15s;
+    }
+
+    .forgot-link:hover { opacity: 1; }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%;
+      background: var(--nx-orange);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 13px;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-login:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Loading spinner inside button */
+    .btn-login .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn-login.loading .btn-text { display: none; }
+    .btn-login.loading .spinner { display: block; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      color: var(--text-hint);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Register link */
+    .register-row {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .register-row a {
+      color: var(--nx-orange);
+      text-decoration: none;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+      min-width: 260px;
+      max-width: 90vw;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .toast.success .toast-icon {
+      background: rgba(45, 212, 191, 0.2);
+      color: var(--success);
+    }
+
+    .toast.error .toast-icon {
+      background: rgba(248, 113, 113, 0.2);
+      color: var(--error);
+    }
+
+    .toast-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .toast-title {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .toast-scheme {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-hint);
+      line-height: 1.7;
+    }
+
+    .footer a {
+      color: var(--text-hint);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Redirect overlay */
+    .redirect-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .redirect-overlay.show {
+      display: flex;
+    }
+
+    .redirect-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--nx-orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .redirect-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      letter-spacing: 0.3px;
+    }
+
+    .redirect-scheme {
+      font-size: 10px;
+      font-family: 'Courier New', monospace;
+      color: var(--text-hint);
+      margin-top: -8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="logo-wrap">
+      <div class="logo-mark">NX</div>
+      <div>
+        <div class="logo-text">NEXON <span class="logo-region">JP</span></div>
+      </div>
+    </div>
+    <p class="card-title">アカウントにログイン</p>
+
+    <div class="field">
+      <label for="userId">ネクソンID / メールアドレス</label>
+      <input
+        type="text"
+        id="userId"
+        placeholder="例）nexon@example.com"
+        autocomplete="username"
+        autocorrect="off"
+        autocapitalize="none"
+      >
+      <div class="field-error" id="userId-error">IDを入力してください</div>
+    </div>
+
+    <div class="field">
+      <label for="password">パスワード</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="••••••••"
+        autocomplete="current-password"
+      >
+      <div class="field-error" id="password-error">パスワードを入力してください</div>
+    </div>
+
+    <div class="options-row">
+      <label class="remember-label">
+        <input type="checkbox" id="remember"> ログイン状態を維持
+      </label>
+      <a href="#" class="forgot-link" onclick="return false;">パスワードを忘れた方</a>
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+      <span class="btn-text">ログイン</span>
+      <div class="spinner"></div>
+    </button>
+
+    <div class="divider">または</div>
+
+    <div class="register-row">
+      アカウントをお持ちでない方は
+      <a href="#" onclick="return false;">新規登録</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="#" onclick="return false;">プライバシーポリシー</a> ·
+    <a href="#" onclick="return false;">利用規約</a> ·
+    <a href="#" onclick="return false;">サポート</a><br>
+    © 2025 NEXON Co., Ltd. All Rights Reserved.
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-icon" id="toastIcon">✓</div>
+    <div class="toast-body">
+      <div class="toast-title" id="toastTitle"></div>
+      <div class="toast-scheme" id="toastScheme"></div>
+    </div>
+  </div>
+
+  <!-- Redirect overlay -->
+  <div class="redirect-overlay" id="redirectOverlay">
+    <div class="redirect-spinner"></div>
+    <div class="redirect-text">認証が完了しました。アプリに戻っています…</div>
+    <div class="redirect-scheme" id="overlayScheme"></div>
+  </div>
+
+  <script>
+    const REDIRECT_SCHEME = 'njauth-com.nexon.platform.sdk.sample://signin?memberSN=232323';
+
+    function showToast(type, title, scheme) {
+      const toast = document.getElementById('toast');
+      const toastIcon = document.getElementById('toastIcon');
+      const toastTitle = document.getElementById('toastTitle');
+      const toastScheme = document.getElementById('toastScheme');
+
+      toast.className = 'toast ' + type;
+      toastIcon.textContent = type === 'success' ? '✓' : '✕';
+      toastTitle.textContent = title;
+      toastScheme.textContent = scheme || '';
+
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function validate() {
+      const userId = document.getElementById('userId').value.trim();
+      const password = document.getElementById('password').value;
+      const userIdError = document.getElementById('userId-error');
+      const passwordError = document.getElementById('password-error');
+      let valid = true;
+
+      // Reset
+      document.getElementById('userId').classList.remove('error');
+      document.getElementById('password').classList.remove('error');
+      userIdError.classList.remove('show');
+      passwordError.classList.remove('show');
+
+      if (!userId) {
+        document.getElementById('userId').classList.add('error');
+        userIdError.classList.add('show');
+        valid = false;
+      }
+
+      if (!password) {
+        document.getElementById('password').classList.add('error');
+        passwordError.classList.add('show');
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    function handleLogin() {
+      if (!validate()) return;
+
+      const btn = document.getElementById('loginBtn');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      // Simulate auth delay
+      setTimeout(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+
+        // Show overlay
+        const overlay = document.getElementById('redirectOverlay');
+        document.getElementById('overlayScheme').textContent = REDIRECT_SCHEME;
+        overlay.classList.add('show');
+
+        // Redirect via custom scheme
+        setTimeout(() => {
+          try {
+            window.location.href = REDIRECT_SCHEME;
+          } catch (e) {
+            // fallback: some environments block direct assignment
+            const a = document.createElement('a');
+            a.href = REDIRECT_SCHEME;
+            a.click();
+          }
+
+          // Toast as fallback feedback (ASWebAuth / Custom Tab may close before showing)
+          showToast('success', 'ログイン成功', REDIRECT_SCHEME);
+        }, 600);
+
+      }, 1200);
+    }
+
+    // Enter key support
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleLogin();
+    });
+
+    // Remove error state on input
+    ['userId', 'password'].forEach(function(id) {
+      document.getElementById(id).addEventListener('input', function() {
+        this.classList.remove('error');
+        document.getElementById(id + '-error').classList.remove('show');
+      });
+    });
+  </script>
+</body>
+</html>
